@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>N1 Flashcard - Persistent Pro</title>
+    <title>N1 Flashcard - Fix Undo</title>
     <script src="data.js"></script>
     <style>
         :root { --primary: #3498db; --success: #2ecc71; --danger: #e74c3c; --warning: #f1c40f; --bg: #f0f2f5; }
@@ -27,12 +27,12 @@
         .btn-not { background: var(--danger); }
         .btn-done { background: var(--success); }
         #status { margin-top: auto; padding-bottom: 20px; color: #7f8c8d; font-size: 14px; font-weight: bold; }
-        #resultView { display: none; text-align: center; background: white; padding: 25px; border-radius: 20px; width: 85%; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        #resultView { display: none; text-align: center; background: white; padding: 25px; border-radius: 20px; width: 85%; }
         .speaker { margin-top: 10px; font-size: 24px; cursor: pointer; background: #eee; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
-    <h2>Learn N1 with Hải Triều ✅</h2>
+    <h2>Learn N1 With Hải Triều</h2>
     <select id="lessonSelect" onchange="loadLesson()"></select>
 
     <div id="studyView" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
@@ -56,17 +56,16 @@
     </div>
 
     <div id="resultView">
-        <h3>🎉 Chúc mừng!</h3>
-        <p>Bạn đã hoàn thành tất cả từ vựng của bài này.</p>
-        <button onclick="resetLessonProgress()" style="padding:15px; background:var(--danger); color:white; border:none; border-radius:12px; width:100%; font-weight:bold;">HỌC LẠI TỪ ĐẦU BÀI NÀY</button>
-        <p style="font-size: 12px; color: #999; margin-top:10px;">(Xóa lịch sử để bắt đầu lại danh sách)</p>
+        <h3>🎉 Hoàn thành!</h3>
+        <p>Bạn đã xem hết danh sách từ của bài này.</p>
+        <button onclick="resetLessonProgress()" style="padding:15px; background:var(--danger); color:white; border:none; border-radius:12px; width:100%; font-weight:bold;">HỌC LẠI TỪ ĐẦU</button>
     </div>
 
-    <div id="status">Đang tải dữ liệu...</div>
+    <div id="status">Đang nạp dữ liệu...</div>
 
 <script>
     let currentList = [], index = 0, lastAction = null;
-    let startX = 0, currentX = 0, isDragging = false, startTime = 0, isFlipping = false;
+    let startX = 0, currentX = 0, isDragging = false, isFlipping = false;
 
     window.onload = function() {
         if (typeof allData === 'undefined') return;
@@ -78,7 +77,6 @@
             sel.appendChild(opt);
         });
 
-        // Khôi phục bài học cuối cùng
         const lastL = localStorage.getItem('n1_current_lesson');
         if (lastL) sel.value = lastL;
 
@@ -101,27 +99,20 @@
         localStorage.setItem('n1_current_lesson', L);
         
         const doneWords = JSON.parse(localStorage.getItem(`done_lesson_${L}`) || "[]");
-        
-        // Lọc từ CHƯA THUỘC (Giữ nguyên thứ tự trong data.js)
         currentList = allData.filter(item => item.lesson == L && !doneWords.includes(item.words));
 
         if (currentList.length === 0) {
             document.getElementById('studyView').style.display = "none";
             document.getElementById('resultView').style.display = "block";
-            document.getElementById('status').innerText = "Bài này đã hoàn thành!";
+            document.getElementById('status').innerText = "Bài học đã xong!";
         } else {
+            const savedIdx = localStorage.getItem(`index_lesson_${L}`);
+            index = (savedIdx && parseInt(savedIdx) < currentList.length) ? parseInt(savedIdx) : 0;
             startRound();
         }
     }
 
     function startRound() {
-        const L = document.getElementById('lessonSelect').value;
-        const savedIndex = localStorage.getItem(`last_index_lesson_${L}`);
-        
-        // Khôi phục đúng vị trí từ đang học dở
-        index = (savedIndex && parseInt(savedIndex) < currentList.length) ? parseInt(savedIndex) : 0;
-        
-        lastAction = null;
         document.getElementById('studyView').style.display = "flex";
         document.getElementById('resultView').style.display = "none";
         render();
@@ -130,20 +121,18 @@
     function render() {
         const card = document.getElementById('cardElement');
         const L = document.getElementById('lessonSelect').value;
-        
         isFlipping = false;
         card.style.transition = "transform 0.5s";
         card.classList.remove('is-flipped');
         card.style.transform = "rotateY(0deg) translateX(0px)";
         
-        // Lưu vị trí từ hiện tại ngay lập tức
-        localStorage.setItem(`last_index_lesson_${L}`, index);
+        localStorage.setItem(`index_lesson_${L}`, index);
         
         const item = currentList[index];
         document.getElementById('txtFront').innerText = item.words;
         document.getElementById('txtReading').innerText = item.reading;
         document.getElementById('txtMeaning').innerText = item.meaning;
-        document.getElementById('status').innerText = `Bài ${L}: Từ thứ ${index + 1} (Còn ${currentList.length - index} từ chưa học)`;
+        document.getElementById('status').innerText = `Bài ${L}: Từ ${index + 1} / ${currentList.length}`;
     }
 
     function handleMark(isOk) {
@@ -151,6 +140,7 @@
         
         const L = document.getElementById('lessonSelect').value;
         const currentWord = currentList[index].words;
+        lastAction = isOk ? 'ok' : 'no';
 
         if (isOk) {
             let doneWords = JSON.parse(localStorage.getItem(`done_lesson_${L}`) || "[]");
@@ -158,11 +148,6 @@
                 doneWords.push(currentWord);
                 localStorage.setItem(`done_lesson_${L}`, JSON.stringify(doneWords));
             }
-            lastAction = 'ok';
-            // Khi đánh dấu "Thuộc", từ đó biến mất khỏi list dở, nên ta không tăng index mà render từ tiếp theo tại vị trí cũ
-        } else {
-            lastAction = 'no';
-            index++; // Không thuộc thì mới nhảy sang từ tiếp theo trong list dở
         }
 
         const card = document.getElementById('cardElement');
@@ -171,36 +156,51 @@
         card.style.transform = `translateX(${isOk ? 600 : -600}px) ${rotY} rotate(${isOk ? 30 : -30}deg)`;
 
         setTimeout(() => {
-            if (isOk) {
-                // Tải lại list vì list đã bớt đi 1 từ vừa thuộc
-                loadLesson(); 
+            if (index < currentList.length - 1) {
+                index++; 
+                render();
             } else {
-                if (index < currentList.length) render(); 
-                else loadLesson(); // Hết list dở thì check lại
+                checkEndGame();
             }
         }, 300);
     }
 
     function goBack() {
-        if (index <= 0 && lastAction === null) return;
+        if (index <= 0) return;
         const L = document.getElementById('lessonSelect').value;
         
+        // Nếu từ trước đó vừa được bấm "Đã thuộc", ta phải xóa nó khỏi danh sách thuộc để nó hiện lại
         if (lastAction === 'ok') {
             let doneWords = JSON.parse(localStorage.getItem(`done_lesson_${L}`) || "[]");
             doneWords.pop();
             localStorage.setItem(`done_lesson_${L}`, JSON.stringify(doneWords));
-            loadLesson(); // Tải lại list để hiện từ vừa xóa khỏi danh sách thuộc
-        } else {
-            index--;
-            render();
         }
-        lastAction = null;
+        
+        index--;
+        lastAction = null; // Reset để tránh lùi liên tục làm sai lệch data (hoặc bạn có thể mở rộng nếu muốn)
+        render();
+    }
+
+    function checkEndGame() {
+        const L = document.getElementById('lessonSelect').value;
+        const doneWords = JSON.parse(localStorage.getItem(`done_lesson_${L}`) || "[]");
+        const totalInLesson = allData.filter(i => i.lesson == L).length;
+
+        if (doneWords.length >= totalInLesson) {
+            let completed = JSON.parse(localStorage.getItem('n1_completed_lessons') || "[]");
+            if (!completed.includes(L)) completed.push(L);
+            localStorage.setItem('n1_completed_lessons', JSON.stringify(completed));
+            updateSelectDisplay();
+        }
+        document.getElementById('studyView').style.display = "none";
+        document.getElementById('resultView').style.display = "block";
+        document.getElementById('status').innerText = "Hết lượt!";
     }
 
     function resetLessonProgress() {
         const L = document.getElementById('lessonSelect').value;
         localStorage.removeItem(`done_lesson_${L}`);
-        localStorage.removeItem(`last_index_lesson_${L}`);
+        localStorage.removeItem(`index_lesson_${L}`);
         let completed = JSON.parse(localStorage.getItem('n1_completed_lessons') || "[]");
         localStorage.setItem('n1_completed_lessons', JSON.stringify(completed.filter(id => id !== L)));
         location.reload();
@@ -219,8 +219,7 @@
         const onStart = (e) => {
             if (isFlipping) return;
             startX = (e.type.includes('mouse')) ? e.clientX : e.touches[0].clientX;
-            currentX = startX; startTime = Date.now();
-            card.style.transition = "none";
+            currentX = startX; card.style.transition = "none";
         };
         const onMove = (e) => {
             if (startX === 0 || isFlipping) return;
@@ -237,8 +236,7 @@
         const onEnd = () => {
             if (startX === 0 || isFlipping) return;
             const diff = currentX - startX;
-            const timeDiff = Date.now() - startTime;
-            if (Math.abs(diff) < 20 && timeDiff < 250) {
+            if (Math.abs(diff) < 20) {
                 isFlipping = true;
                 let isBack = card.classList.toggle('is-flipped');
                 card.style.transition = "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)";
@@ -247,22 +245,3 @@
                 setTimeout(() => { isFlipping = false; }, 500);
             } 
             else if (diff > 120) handleMark(true);
-            else if (diff < -120) handleMark(false);
-            else {
-                card.style.transition = "transform 0.3s";
-                card.style.transform = card.classList.contains('is-flipped') ? "rotateY(180deg)" : "rotateY(0deg)";
-            }
-            document.getElementById('badgeDone').style.opacity = 0;
-            document.getElementById('badgeNot').style.opacity = 0;
-            startX = 0;
-        };
-        area.addEventListener('touchstart', onStart, {passive: true});
-        window.addEventListener('touchmove', onMove, {passive: false});
-        window.addEventListener('touchend', onEnd);
-        area.addEventListener('mousedown', onStart);
-        window.addEventListener('mousemove', onMove);
-        window.addEventListener('mouseup', onEnd);
-    }
-</script>
-</body>
-</html>
