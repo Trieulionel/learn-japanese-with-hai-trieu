@@ -206,12 +206,35 @@
         location.reload();
     }
 
-    function speak() {
-        const text = document.getElementById('txtFront').innerText;
-        const msg = new SpeechSynthesisUtterance(text);
-        msg.lang = 'ja-JP'; msg.rate = 0.8;
-        window.speechSynthesis.speak(msg);
+   function speak() {
+    // 1. Kiểm tra xem trình duyệt/máy có hỗ trợ không
+    if (!window.speechSynthesis) {
+        alert("Thiết bị của bạn không hỗ trợ giọng đọc!");
+        return;
     }
+
+    const text = document.getElementById('txtFront').innerText;
+    
+    // 2. Dừng mọi luồng âm thanh đang chạy dở
+    window.speechSynthesis.cancel();
+
+    // 3. Tạo yêu cầu mới
+    const msg = new SpeechSynthesisUtterance();
+    msg.text = text;
+    msg.lang = 'ja-JP';
+    msg.rate = 0.8;
+    msg.volume = 1.0; // Đảm bảo âm lượng tối đa
+
+    // 4. Mẹo cho Android: Kích hoạt Resume trước khi Speak
+    window.speechSynthesis.resume(); 
+    window.speechSynthesis.speak(msg);
+
+    // 5. Fix lỗi Chrome/Android bị treo sau 15 giây
+    let r = setInterval(() => {
+        if (!window.speechSynthesis.speaking) clearInterval(r);
+        else window.speechSynthesis.resume();
+    }, 10000);
+}
 
     function attachLogic() {
         const area = document.getElementById('touchArea');
