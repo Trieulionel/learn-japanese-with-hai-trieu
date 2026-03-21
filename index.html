@@ -32,7 +32,7 @@
     </style>
 </head>
 <body>
-    <h2>Learn N1 With Hải Triều</h2>
+    <h2>Lear N1 With Hải Triều</h2>
     <select id="lessonSelect" onchange="loadLesson()"></select>
 
     <div id="studyView" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
@@ -245,3 +245,22 @@
                 setTimeout(() => { isFlipping = false; }, 500);
             } 
             else if (diff > 120) handleMark(true);
+            else if (diff < -120) handleMark(false);
+            else {
+                card.style.transition = "transform 0.3s";
+                card.style.transform = card.classList.contains('is-flipped') ? "rotateY(180deg)" : "rotateY(0deg)";
+            }
+            document.getElementById('badgeDone').style.opacity = 0;
+            document.getElementById('badgeNot').style.opacity = 0;
+            startX = 0;
+        };
+        area.addEventListener('touchstart', onStart, {passive: true});
+        window.addEventListener('touchmove', onMove, {passive: false});
+        window.addEventListener('touchend', onEnd);
+        area.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+    }
+</script>
+</body>
+</html>
