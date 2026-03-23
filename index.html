@@ -3,51 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>N1 Flashcard - Fix Undo</title>
+    <title>N1 Flashcard - Swipe Integrated ✅</title>
     <script src="data.js"></script>
     <style>
-        :root { --primary: #3498db; --success: #2ecc71; --danger: #e74c3c; --warning: #f1c40f; --bg: #f0f2f5; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; user-select: none; touch-action: none; }
-        h2 { color: #2c3e50; margin: 15px 0 10px 0; font-size: 18px; }
-        #lessonSelect { width: 85%; padding: 12px; border-radius: 12px; border: 2px solid var(--primary); margin-bottom: 10px; font-size: 16px; outline: none; }
-        .container { position: relative; width: 90vw; max-width: 400px; height: 260px; perspective: 1200px; }
-        .card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.5s; }
-        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 20px; background: white; box-shadow: 0 8px 20px rgba(0,0,0,0.1); padding: 20px; text-align: center; }
-        .front { font-size: 45px; font-weight: bold; }
-        .back { transform: rotateY(180deg); }
-        .reading { font-size: 30px; color: var(--danger); }
-        .meaning { font-size: 20px; color: var(--success); margin-top: 10px; }
-        .badge { position: absolute; top: 15px; padding: 5px 12px; border-radius: 5px; color: white; font-weight: bold; opacity: 0; z-index: 10; }
-        .badge-right { right: 15px; background: var(--success); }
-        .badge-left { left: 15px; background: var(--danger); }
-        .control-btns { margin-top: 25px; display: flex; gap: 8px; width: 95%; max-width: 420px; }
-        .btn-action { flex: 1; padding: 15px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 14px; }
-        .btn-back { background: var(--warning); color: #2c3e50; flex: 0.5; }
+        :root { --primary: #3498db; --success: #2ecc71; --danger: #e74c3c; --warning: #f1c40f; --glass: rgba(255, 255, 255, 0.9); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('bg.jpg');
+            background-size: cover; background-position: center; background-attachment: fixed;
+            margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden;
+        }
+        h2 { color: white; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin: 20px 0 10px 0; font-size: 22px; }
+        #lessonSelect { width: 85%; padding: 14px; border-radius: 15px; border: none; margin-bottom: 15px; font-size: 16px; font-weight: bold; background: var(--glass); outline: none; touch-action: auto; }
+
+        .container { 
+            position: relative; width: 92vw; max-width: 400px; height: 280px; 
+            perspective: 1000px; cursor: pointer;
+            transition: transform 0.4s ease-out, opacity 0.4s;
+        }
+        
+        .card { 
+            width: 100%; height: 100%; position: relative; 
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none; 
+        }
+        .card.flipped { transform: rotateY(180deg); }
+        
+        .card-face { 
+            position: absolute; width: 100%; height: 100%; 
+            backface-visibility: hidden; -webkit-backface-visibility: hidden;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            border-radius: 25px; background: white; box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+            padding: 25px; text-align: center;
+        }
+        .front { font-size: 48px; font-weight: bold; color: #333; z-index: 2; }
+        .back { transform: rotateY(180deg); z-index: 1; }
+        
+        .reading { font-size: 32px; color: var(--danger); font-weight: bold; }
+        .meaning { font-size: 22px; color: var(--success); }
+
+        /* Badge thông báo khi vuốt */
+        .badge { position: absolute; top: 20px; padding: 8px 18px; border-radius: 10px; color: white; font-weight: bold; opacity: 0; z-index: 100; pointer-events: none; }
+        .badge-right { right: 20px; background: var(--success); }
+        .badge-left { left: 20px; background: var(--danger); }
+
+        .control-btns { margin-top: 25px; display: flex; gap: 12px; width: 92%; max-width: 420px; touch-action: auto; }
+        .btn-action { flex: 1; padding: 18px; border: none; border-radius: 18px; color: white; font-weight: bold; font-size: 15px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .btn-back { background: var(--warning); color: #2c3e50; flex: 0.5; font-size: 20px; }
         .btn-not { background: var(--danger); }
         .btn-done { background: var(--success); }
-        #status { margin-top: auto; padding-bottom: 20px; color: #7f8c8d; font-size: 14px; font-weight: bold; }
-        #resultView { display: none; text-align: center; background: white; padding: 25px; border-radius: 20px; width: 85%; }
-        .speaker { margin-top: 10px; font-size: 24px; cursor: pointer; background: #eee; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        
+        #status { margin-top: auto; padding-bottom: 25px; color: white; font-weight: bold; }
+        #resultView { display: none; text-align: center; background: var(--glass); padding: 30px; border-radius: 25px; width: 90%; max-width: 400px; touch-action: auto; }
+        .nav-btn { width: 100%; padding: 15px; margin: 8px 0; border: none; border-radius: 15px; font-weight: bold; color: white; cursor: pointer; }
+        .speaker { margin-top: 15px; font-size: 40px; background: #eee; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; pointer-events: auto; }
     </style>
 </head>
 <body>
-    <h2>Lear N1 With Hải Triều</h2>
-    <select id="lessonSelect" onchange="loadLesson()"></select>
+    <h2>Học N1 Siêu Cấp ✅</h2>
+    <select id="lessonSelect" onchange="initLesson(false)"></select>
 
     <div id="studyView" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-        <div class="container" id="touchArea">
+        <div class="container" id="mainContainer">
             <div id="badgeDone" class="badge badge-right">THUỘC</div>
             <div id="badgeNot" class="badge badge-left">CHƯA</div>
+            
             <div class="card" id="cardElement">
                 <div class="card-face front" id="txtFront">...</div>
                 <div class="card-face back">
-                    <div id="txtReading" class="reading"></div>
-                    <div id="txtMeaning" class="meaning"></div>
-                    <div class="speaker" onclick="speak()">🔊</div>
+                    <div class="reading" id="txtReading"></div>
+                    <div class="meaning" id="txtMeaning"></div>
+                    <div class="speaker" onclick="event.stopPropagation(); speak();">🔊</div>
                 </div>
             </div>
         </div>
+
         <div class="control-btns">
             <button class="btn-action btn-back" onclick="goBack()">↩</button>
             <button class="btn-action btn-not" onclick="handleMark(false)">Chưa thuộc</button>
@@ -56,16 +88,20 @@
     </div>
 
     <div id="resultView">
-        <h3>🎉 Hoàn thành!</h3>
-        <p>Bạn đã xem hết danh sách từ của bài này.</p>
-        <button onclick="resetLessonProgress()" style="padding:15px; background:var(--danger); color:white; border:none; border-radius:12px; width:100%; font-weight:bold;">HỌC LẠI TỪ ĐẦU</button>
+        <h3 style="margin-top:0; color:#2c3e50;">KẾT QUẢ BÀI HỌC</h3>
+        <div style="display: flex; justify-content: space-around; margin: 20px 0;">
+            <div style="color:var(--success);">Đã thuộc: <b id="countDone" style="font-size: 24px;">0</b></div>
+            <div style="color:var(--danger);">Chưa thuộc: <b id="countNot" style="font-size: 24px;">0</b></div>
+        </div>
+        <button id="btnLearnNot" class="nav-btn" style="background:var(--primary);" onclick="learnOnlyNot()">HỌC TỪ CHƯA THUỘC</button>
+        <button class="nav-btn" style="background:var(--warning); color:#333;" onclick="clearAndRestart()">HỌC LẠI TẤT CẢ</button>
     </div>
-
-    <div id="status">Đang nạp dữ liệu...</div>
+    <div id="status">Đang tải...</div>
 
 <script>
-    let currentList = [], index = 0, lastAction = null;
-    let startX = 0, currentX = 0, isDragging = false, isFlipping = false;
+    let sessionList = [], index = 0, currentLesson = "";
+    let doneWords = [], notWords = [], history = [];
+    let synth = window.speechSynthesis, isProcessing = false;
 
     window.onload = function() {
         if (typeof allData === 'undefined') return;
@@ -76,213 +112,179 @@
             opt.value = l; opt.innerText = "Bài học " + l;
             sel.appendChild(opt);
         });
-
-        const lastL = localStorage.getItem('n1_current_lesson');
+        const lastL = localStorage.getItem('n1_last_L');
         if (lastL) sel.value = lastL;
-
         updateSelectDisplay();
-        loadLesson();
-        attachLogic();
+        initLesson(false); 
+        attachSwipeLogic(); // Kích hoạt bộ lọc vuốt
     };
 
-    function updateSelectDisplay() {
-        const sel = document.getElementById('lessonSelect');
-        const completed = JSON.parse(localStorage.getItem('n1_completed_lessons') || "[]");
-        Array.from(sel.options).forEach(opt => {
-            let baseText = opt.innerText.replace(" ✅", "");
-            opt.innerText = completed.includes(opt.value) ? baseText + " ✅" : baseText;
-        });
+    function flipCard() {
+        if (isProcessing) return;
+        const card = document.getElementById('cardElement');
+        const isFlipped = card.classList.toggle('flipped');
+        if (isFlipped) setTimeout(speak, 150);
     }
 
-    function loadLesson() {
-        const L = document.getElementById('lessonSelect').value;
-        localStorage.setItem('n1_current_lesson', L);
-        
-        const doneWords = JSON.parse(localStorage.getItem(`done_lesson_${L}`) || "[]");
-        currentList = allData.filter(item => item.lesson == L && !doneWords.includes(item.words));
+    function attachSwipeLogic() {
+        const container = document.getElementById('mainContainer');
+        const card = document.getElementById('cardElement');
+        let startX = 0, distX = 0, isSwiping = false;
 
-        if (currentList.length === 0) {
-            document.getElementById('studyView').style.display = "none";
-            document.getElementById('resultView').style.display = "block";
-            document.getElementById('status').innerText = "Bài học đã xong!";
+        container.onpointerdown = (e) => {
+            if (isProcessing) return;
+            startX = e.clientX;
+            isSwiping = false;
+            container.style.transition = "none";
+            container.setPointerCapture(e.pointerId);
+        };
+
+        container.onpointermove = (e) => {
+            if (startX === 0 || isProcessing) return;
+            distX = e.clientX - startX;
+            
+            if (Math.abs(distX) > 15) { // Ngưỡng bắt đầu vuốt
+                isSwiping = true;
+                container.style.transform = `translateX(${distX}px) rotate(${distX/20}deg)`;
+                document.getElementById('badgeDone').style.opacity = distX > 80 ? 1 : 0;
+                document.getElementById('badgeNot').style.opacity = distX < -80 ? 1 : 0;
+            }
+        };
+
+        container.onpointerup = (e) => {
+            if (startX === 0 || isProcessing) return;
+            
+            if (!isSwiping) {
+                // Nếu không di chuyển tay -> Lật thẻ (Giữ nguyên tính năng cũ)
+                flipCard();
+            } else {
+                // Nếu có di chuyển -> Xét xem có đủ để Bay không
+                if (distX > 120) handleMark(true);
+                else if (distX < -120) handleMark(false);
+                else {
+                    // Vuốt hụt -> Quay về vị trí cũ
+                    container.style.transition = "transform 0.3s";
+                    container.style.transform = "translateX(0) rotate(0)";
+                }
+            }
+            // Reset badge
+            document.getElementById('badgeDone').style.opacity = 0;
+            document.getElementById('badgeNot').style.opacity = 0;
+            startX = 0;
+        };
+    }
+
+    function handleMark(isOk) {
+        if (isProcessing || index >= sessionList.length) return;
+        isProcessing = true;
+
+        const container = document.getElementById('mainContainer');
+        const item = sessionList[index];
+        history.push({index: index, type: isOk ? 'done' : 'not'});
+        if (isOk) doneWords.push(item); else notWords.push(item);
+        
+        // Hiệu ứng bay (Giữ nguyên bản trước)
+        container.style.transition = "transform 0.4s ease-in, opacity 0.3s";
+        container.style.transform = `translateX(${isOk ? 600 : -600}px) rotate(${isOk ? 25 : -25}deg)`;
+        container.style.opacity = "0";
+
+        setTimeout(() => {
+            index++;
+            if (index < sessionList.length) render();
+            else { saveToLocal(); showResult(); }
+        }, 400);
+    }
+
+    function render() {
+        isProcessing = false;
+        const container = document.getElementById('mainContainer');
+        const card = document.getElementById('cardElement');
+        
+        container.style.transition = "none";
+        container.style.transform = "translateX(0) rotate(0)";
+        container.style.opacity = "1";
+        card.classList.remove('flipped');
+        
+        const item = sessionList[index];
+        if(!item) return;
+        document.getElementById('txtFront').innerText = item.words;
+        document.getElementById('txtReading').innerText = item.reading;
+        document.getElementById('txtMeaning').innerText = item.meaning;
+        document.getElementById('status').innerText = `Từ ${index + 1} / ${sessionList.length}`;
+        saveToLocal();
+    }
+
+    // --- CÁC HÀM LOGIC CÒN LẠI GIỮ NGUYÊN ---
+    function initLesson(isForceReset) {
+        currentLesson = document.getElementById('lessonSelect').value;
+        localStorage.setItem('n1_last_L', currentLesson);
+        const savedData = JSON.parse(localStorage.getItem(`save_${currentLesson}`) || "null");
+        if (isForceReset || !savedData) {
+            sessionList = allData.filter(item => item.lesson == currentLesson);
+            index = 0; doneWords = []; notWords = []; history = [];
         } else {
-            const savedIdx = localStorage.getItem(`index_lesson_${L}`);
-            index = (savedIdx && parseInt(savedIdx) < currentList.length) ? parseInt(savedIdx) : 0;
-            startRound();
+            sessionList = savedData.sessionList; index = savedData.index;
+            doneWords = savedData.doneWords; notWords = savedData.notWords; history = savedData.history;
+        }
+        if (index >= sessionList.length && sessionList.length > 0) showResult();
+        else {
+            document.getElementById('studyView').style.display = "flex";
+            document.getElementById('resultView').style.display = "none";
+            render();
         }
     }
 
-    function startRound() {
+    function goBack() {
+        if (history.length === 0 || isProcessing) return;
+        const last = history.pop();
+        if (last.type === 'done') doneWords.pop(); else notWords.pop();
+        index = last.index; render();
+    }
+
+    function saveToLocal() {
+        const data = { sessionList, index, doneWords, notWords, history };
+        localStorage.setItem(`save_${currentLesson}`, JSON.stringify(data));
+    }
+
+    function showResult() {
+        document.getElementById('studyView').style.display = "none";
+        document.getElementById('resultView').style.display = "block";
+        document.getElementById('countDone').innerText = doneWords.length;
+        document.getElementById('countNot').innerText = notWords.length;
+        if (notWords.length === 0) {
+            let completed = JSON.parse(localStorage.getItem('n1_master_completed') || "[]");
+            if (!completed.includes(currentLesson)) {
+                completed.push(currentLesson);
+                localStorage.setItem('n1_master_completed', JSON.stringify(completed));
+                updateSelectDisplay();
+            }
+        }
+    }
+
+    function learnOnlyNot() {
+        sessionList = [...notWords]; index = 0; doneWords = []; notWords = []; history = [];
         document.getElementById('studyView').style.display = "flex";
         document.getElementById('resultView').style.display = "none";
         render();
     }
 
-    function render() {
-        const card = document.getElementById('cardElement');
-        const L = document.getElementById('lessonSelect').value;
-        isFlipping = false;
-        card.style.transition = "transform 0.5s";
-        card.classList.remove('is-flipped');
-        card.style.transform = "rotateY(0deg) translateX(0px)";
-        
-        localStorage.setItem(`index_lesson_${L}`, index);
-        
-        const item = currentList[index];
-        document.getElementById('txtFront').innerText = item.words;
-        document.getElementById('txtReading').innerText = item.reading;
-        document.getElementById('txtMeaning').innerText = item.meaning;
-        document.getElementById('status').innerText = `Bài ${L}: Từ ${index + 1} / ${currentList.length}`;
+    function clearAndRestart() { initLesson(true); }
+
+    function speak() {
+        if (!synth) synth = window.speechSynthesis;
+        synth.cancel();
+        const msg = new SpeechSynthesisUtterance(document.getElementById('txtFront').innerText);
+        msg.lang = 'ja-JP'; msg.rate = 0.8;
+        synth.speak(msg);
     }
 
-    function handleMark(isOk) {
-        if (isFlipping || index >= currentList.length) return;
-        
-        const L = document.getElementById('lessonSelect').value;
-        const currentWord = currentList[index].words;
-        lastAction = isOk ? 'ok' : 'no';
-
-        if (isOk) {
-            let doneWords = JSON.parse(localStorage.getItem(`done_lesson_${L}`) || "[]");
-            if (!doneWords.includes(currentWord)) {
-                doneWords.push(currentWord);
-                localStorage.setItem(`done_lesson_${L}`, JSON.stringify(doneWords));
-            }
-        }
-
-        const card = document.getElementById('cardElement');
-        card.style.transition = "transform 0.4s ease-in";
-        let rotY = card.classList.contains('is-flipped') ? "rotateY(180deg)" : "rotateY(0deg)";
-        card.style.transform = `translateX(${isOk ? 600 : -600}px) ${rotY} rotate(${isOk ? 30 : -30}deg)`;
-
-        setTimeout(() => {
-            if (index < currentList.length - 1) {
-                index++; 
-                render();
-            } else {
-                checkEndGame();
-            }
-        }, 300);
-    }
-
-    function goBack() {
-        if (index <= 0) return;
-        const L = document.getElementById('lessonSelect').value;
-        
-        // Nếu từ trước đó vừa được bấm "Đã thuộc", ta phải xóa nó khỏi danh sách thuộc để nó hiện lại
-        if (lastAction === 'ok') {
-            let doneWords = JSON.parse(localStorage.getItem(`done_lesson_${L}`) || "[]");
-            doneWords.pop();
-            localStorage.setItem(`done_lesson_${L}`, JSON.stringify(doneWords));
-        }
-        
-        index--;
-        lastAction = null; // Reset để tránh lùi liên tục làm sai lệch data (hoặc bạn có thể mở rộng nếu muốn)
-        render();
-    }
-
-    function checkEndGame() {
-        const L = document.getElementById('lessonSelect').value;
-        const doneWords = JSON.parse(localStorage.getItem(`done_lesson_${L}`) || "[]");
-        const totalInLesson = allData.filter(i => i.lesson == L).length;
-
-        if (doneWords.length >= totalInLesson) {
-            let completed = JSON.parse(localStorage.getItem('n1_completed_lessons') || "[]");
-            if (!completed.includes(L)) completed.push(L);
-            localStorage.setItem('n1_completed_lessons', JSON.stringify(completed));
-            updateSelectDisplay();
-        }
-        document.getElementById('studyView').style.display = "none";
-        document.getElementById('resultView').style.display = "block";
-        document.getElementById('status').innerText = "Hết lượt!";
-    }
-
-    function resetLessonProgress() {
-        const L = document.getElementById('lessonSelect').value;
-        localStorage.removeItem(`done_lesson_${L}`);
-        localStorage.removeItem(`index_lesson_${L}`);
-        let completed = JSON.parse(localStorage.getItem('n1_completed_lessons') || "[]");
-        localStorage.setItem('n1_completed_lessons', JSON.stringify(completed.filter(id => id !== L)));
-        location.reload();
-    }
-
-   function speak() {
-    // 1. Kiểm tra xem trình duyệt/máy có hỗ trợ không
-    if (!window.speechSynthesis) {
-        alert("Thiết bị của bạn không hỗ trợ giọng đọc!");
-        return;
-    }
-
-    const text = document.getElementById('txtFront').innerText;
-    
-    // 2. Dừng mọi luồng âm thanh đang chạy dở
-    window.speechSynthesis.cancel();
-
-    // 3. Tạo yêu cầu mới
-    const msg = new SpeechSynthesisUtterance();
-    msg.text = text;
-    msg.lang = 'ja-JP';
-    msg.rate = 0.8;
-    msg.volume = 1.0; // Đảm bảo âm lượng tối đa
-
-    // 4. Mẹo cho Android: Kích hoạt Resume trước khi Speak
-    window.speechSynthesis.resume(); 
-    window.speechSynthesis.speak(msg);
-
-    // 5. Fix lỗi Chrome/Android bị treo sau 15 giây
-    let r = setInterval(() => {
-        if (!window.speechSynthesis.speaking) clearInterval(r);
-        else window.speechSynthesis.resume();
-    }, 10000);
-}
-
-    function attachLogic() {
-        const area = document.getElementById('touchArea');
-        const card = document.getElementById('cardElement');
-        const onStart = (e) => {
-            if (isFlipping) return;
-            startX = (e.type.includes('mouse')) ? e.clientX : e.touches[0].clientX;
-            currentX = startX; card.style.transition = "none";
-        };
-        const onMove = (e) => {
-            if (startX === 0 || isFlipping) return;
-            let moveX = (e.type.includes('mouse')) ? e.clientX : e.touches[0].clientX;
-            const diff = moveX - startX;
-            if (Math.abs(diff) > 10) {
-                currentX = moveX;
-                let rotY = card.classList.contains('is-flipped') ? "rotateY(180deg)" : "rotateY(0deg)";
-                card.style.transform = `translateX(${diff}px) ${rotY} rotate(${diff/15}deg)`;
-                document.getElementById('badgeDone').style.opacity = diff > 80 ? 1 : 0;
-                document.getElementById('badgeNot').style.opacity = diff < -80 ? 1 : 0;
-            }
-        };
-        const onEnd = () => {
-            if (startX === 0 || isFlipping) return;
-            const diff = currentX - startX;
-            if (Math.abs(diff) < 20) {
-                isFlipping = true;
-                let isBack = card.classList.toggle('is-flipped');
-                card.style.transition = "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)";
-                card.style.transform = isBack ? "rotateY(180deg)" : "rotateY(0deg)";
-                if(isBack) setTimeout(speak, 200);
-                setTimeout(() => { isFlipping = false; }, 500);
-            } 
-            else if (diff > 120) handleMark(true);
-            else if (diff < -120) handleMark(false);
-            else {
-                card.style.transition = "transform 0.3s";
-                card.style.transform = card.classList.contains('is-flipped') ? "rotateY(180deg)" : "rotateY(0deg)";
-            }
-            document.getElementById('badgeDone').style.opacity = 0;
-            document.getElementById('badgeNot').style.opacity = 0;
-            startX = 0;
-        };
-        area.addEventListener('touchstart', onStart, {passive: true});
-        window.addEventListener('touchmove', onMove, {passive: false});
-        window.addEventListener('touchend', onEnd);
-        area.addEventListener('mousedown', onStart);
-        window.addEventListener('mousemove', onMove);
-        window.addEventListener('mouseup', onEnd);
+    function updateSelectDisplay() {
+        const sel = document.getElementById('lessonSelect');
+        const completed = JSON.parse(localStorage.getItem('n1_master_completed') || "[]");
+        Array.from(sel.options).forEach(opt => {
+            let baseText = opt.innerText.replace(" ✅", "");
+            opt.innerText = completed.includes(opt.value) ? baseText + " ✅" : baseText;
+        });
     }
 </script>
 </body>
