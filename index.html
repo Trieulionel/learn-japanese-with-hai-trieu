@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>No</title>
+    <title>N1 Flashcard - Ultimate Edition ✅</title>
     <script src="data.js"></script>
     <style>
         :root { --primary: #3498db; --success: #2ecc71; --danger: #e74c3c; --warning: #f1c40f; --glass: rgba(255, 255, 255, 0.9); }
@@ -26,7 +26,7 @@
         .card { 
             width: 100%; height: 100%; position: relative; 
             transform-style: preserve-3d;
-            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: none; 
         }
         .card.flipped { transform: rotateY(180deg); }
@@ -44,16 +44,22 @@
         .reading { font-size: 32px; color: var(--danger); font-weight: bold; }
         .meaning { font-size: 22px; color: var(--success); }
 
-        /* Badge thông báo khi vuốt */
         .badge { position: absolute; top: 20px; padding: 8px 18px; border-radius: 10px; color: white; font-weight: bold; opacity: 0; z-index: 100; pointer-events: none; }
         .badge-right { right: 20px; background: var(--success); }
         .badge-left { left: 20px; background: var(--danger); }
 
-        .control-btns { margin-top: 25px; display: flex; gap: 12px; width: 92%; max-width: 420px; touch-action: auto; }
+        .control-btns { margin-top: 20px; display: flex; gap: 12px; width: 92%; max-width: 420px; touch-action: auto; }
         .btn-action { flex: 1; padding: 18px; border: none; border-radius: 18px; color: white; font-weight: bold; font-size: 15px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .btn-back { background: var(--warning); color: #2c3e50; flex: 0.5; font-size: 20px; }
         .btn-not { background: var(--danger); }
         .btn-done { background: var(--success); }
+
+        .typing-area { width: 92%; max-width: 420px; margin-top: 15px; touch-action: auto; }
+        #answerInput { 
+            width: 100%; padding: 15px; border-radius: 15px; border: 2px solid rgba(255,255,255,0.3); 
+            background: rgba(255,255,255,0.2); color: white; font-size: 18px; text-align: center;
+            outline: none; transition: all 0.3s;
+        }
         
         #status { margin-top: auto; padding-bottom: 25px; color: white; font-weight: bold; }
         #resultView { display: none; text-align: center; background: var(--glass); padding: 30px; border-radius: 25px; width: 90%; max-width: 400px; touch-action: auto; }
@@ -84,6 +90,10 @@
             <button class="btn-action btn-back" onclick="goBack()">↩</button>
             <button class="btn-action btn-not" onclick="handleMark(false)">Chưa thuộc</button>
             <button class="btn-action btn-done" onclick="handleMark(true)">Đã thuộc</button>
+        </div>
+
+        <div class="typing-area">
+            <input type="text" id="answerInput" placeholder="Gõ cách đọc để lật..." autocomplete="off">
         </div>
     </div>
 
@@ -116,14 +126,29 @@
         if (lastL) sel.value = lastL;
         updateSelectDisplay();
         initLesson(false); 
-        attachSwipeLogic(); // Kích hoạt bộ lọc vuốt
+        attachSwipeLogic();
+        attachTypingLogic();
     };
+
+    function speak() {
+        if (!synth) synth = window.speechSynthesis;
+        synth.cancel(); 
+        const item = sessionList[index];
+        if (!item) return;
+        const msg = new SpeechSynthesisUtterance(item.words);
+        msg.lang = 'ja-JP';
+        msg.rate = 0.8;
+        msg.volume = 1;
+        synth.speak(msg);
+    }
 
     function flipCard() {
         if (isProcessing) return;
         const card = document.getElementById('cardElement');
-        const isFlipped = card.classList.toggle('flipped');
-        if (isFlipped) setTimeout(speak, 150);
+        // Phát âm ngay khi bắt đầu lật để Android không chặn loa
+        speak();
+        card.style.transition = "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
+        card.classList.toggle('flipped');
     }
 
     function attachSwipeLogic() {
@@ -133,6 +158,8 @@
 
         container.onpointerdown = (e) => {
             if (isProcessing) return;
+            // Mồi âm thanh ngay khi chạm xuống (đánh thức bộ loa Android)
+            if(synth) { synth.speak(new SpeechSynthesisUtterance("")); }
             startX = e.clientX;
             isSwiping = false;
             container.style.transition = "none";
@@ -142,8 +169,7 @@
         container.onpointermove = (e) => {
             if (startX === 0 || isProcessing) return;
             distX = e.clientX - startX;
-            
-            if (Math.abs(distX) > 15) { // Ngưỡng bắt đầu vuốt
+            if (Math.abs(distX) > 15) {
                 isSwiping = true;
                 container.style.transform = `translateX(${distX}px) rotate(${distX/20}deg)`;
                 document.getElementById('badgeDone').style.opacity = distX > 80 ? 1 : 0;
@@ -153,58 +179,71 @@
 
         container.onpointerup = (e) => {
             if (startX === 0 || isProcessing) return;
-            
             if (!isSwiping) {
-                // Nếu không di chuyển tay -> Lật thẻ (Giữ nguyên tính năng cũ)
                 flipCard();
             } else {
-                // Nếu có di chuyển -> Xét xem có đủ để Bay không
                 if (distX > 120) handleMark(true);
                 else if (distX < -120) handleMark(false);
                 else {
-                    // Vuốt hụt -> Quay về vị trí cũ
                     container.style.transition = "transform 0.3s";
                     container.style.transform = "translateX(0) rotate(0)";
                 }
             }
-            // Reset badge
             document.getElementById('badgeDone').style.opacity = 0;
             document.getElementById('badgeNot').style.opacity = 0;
             startX = 0;
         };
     }
 
+    function attachTypingLogic() {
+        const input = document.getElementById('answerInput');
+        input.addEventListener('input', (e) => {
+            if (isProcessing) return;
+            const card = document.getElementById('cardElement');
+            const item = sessionList[index];
+            if (card.classList.contains('flipped')) return;
+            if (e.target.value.trim().toLowerCase() === item.reading.trim().toLowerCase()) {
+                flipCard();
+                e.target.value = "";
+            }
+        });
+    }
+
     function handleMark(isOk) {
         if (isProcessing || index >= sessionList.length) return;
         isProcessing = true;
-
         const container = document.getElementById('mainContainer');
+        const card = document.getElementById('cardElement');
         const item = sessionList[index];
+
         history.push({index: index, type: isOk ? 'done' : 'not'});
         if (isOk) doneWords.push(item); else notWords.push(item);
         
-        // Hiệu ứng bay (Giữ nguyên bản trước)
         container.style.transition = "transform 0.4s ease-in, opacity 0.3s";
         container.style.transform = `translateX(${isOk ? 600 : -600}px) rotate(${isOk ? 25 : -25}deg)`;
         container.style.opacity = "0";
 
         setTimeout(() => {
+            card.style.transition = "none";
+            card.classList.remove('flipped');
             index++;
             if (index < sessionList.length) render();
             else { saveToLocal(); showResult(); }
-        }, 400);
+        }, 350); 
     }
 
     function render() {
         isProcessing = false;
         const container = document.getElementById('mainContainer');
         const card = document.getElementById('cardElement');
+        const input = document.getElementById('answerInput');
         
         container.style.transition = "none";
         container.style.transform = "translateX(0) rotate(0)";
         container.style.opacity = "1";
         card.classList.remove('flipped');
         
+        input.value = "";
         const item = sessionList[index];
         if(!item) return;
         document.getElementById('txtFront').innerText = item.words;
@@ -214,7 +253,6 @@
         saveToLocal();
     }
 
-    // --- CÁC HÀM LOGIC CÒN LẠI GIỮ NGUYÊN ---
     function initLesson(isForceReset) {
         currentLesson = document.getElementById('lessonSelect').value;
         localStorage.setItem('n1_last_L', currentLesson);
@@ -269,14 +307,6 @@
     }
 
     function clearAndRestart() { initLesson(true); }
-
-    function speak() {
-        if (!synth) synth = window.speechSynthesis;
-        synth.cancel();
-        const msg = new SpeechSynthesisUtterance(document.getElementById('txtFront').innerText);
-        msg.lang = 'ja-JP'; msg.rate = 0.8;
-        synth.speak(msg);
-    }
 
     function updateSelectDisplay() {
         const sel = document.getElementById('lessonSelect');
